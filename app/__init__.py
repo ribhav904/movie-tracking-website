@@ -1,0 +1,1 @@
+"""Entertainment Tracker API."""
