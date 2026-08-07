@@ -63,6 +63,36 @@ Open:
 - Liveness: <http://127.0.0.1:8000/health/live>
 - Database readiness: <http://127.0.0.1:8000/health/ready>
 
+## Frontend
+
+The frontend lives in `frontend/`. It is a TypeScript React application with a deliberate
+light/dark design system, Supabase Auth, and a FastAPI-only application-data client.
+
+```powershell
+cd frontend
+Copy-Item .env.example .env.local
+# Add the local FastAPI URL and Supabase publishable credentials.
+npm.cmd install
+npm.cmd run dev
+```
+
+The local UI is available at <http://localhost:3000>. When `.env.local` is not configured, the
+interface enters a clearly marked, non-persistent preview mode so the design can be inspected
+without pretending to use real data. When configuration is present, Supabase is used only for
+email/password authentication and all media, library, tracking, reporting, Arena, and
+recommendation data goes through FastAPI.
+
+Frontend quality checks:
+
+```powershell
+cd frontend
+npm.cmd run lint
+npm.cmd test
+```
+
+The design, UX, technical architecture, and delivery plan are documented in
+[`docs/FRONTEND_PLAN.md`](docs/FRONTEND_PLAN.md).
+
 ## Bootstrap the owner
 
 Create the first user from **Authentication > Users** in the Supabase dashboard. Confirm the email,
