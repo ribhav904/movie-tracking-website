@@ -4,14 +4,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BookmarkPlus, CalendarDays, Star } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 
 import { apiRequest } from "@/lib/api";
 import type { MediaSummary, MediaType } from "@/lib/types";
 
 const mediaTypes = new Set<MediaType>(["movie", "tv", "game", "book"]);
 
-export default function ProviderMediaDetailPage({ params }: { params: { provider: string; externalId: string } }) {
+export default function ProviderMediaDetailPage() {
+  const params = useParams<{ provider: string; externalId: string }>();
   const searchParams = useSearchParams();
   const requestedType = searchParams.get("media_type");
   const mediaType = mediaTypes.has(requestedType as MediaType) ? requestedType as MediaType : null;

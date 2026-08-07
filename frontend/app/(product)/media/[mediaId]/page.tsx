@@ -5,10 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BookmarkPlus, CalendarDays, Star } from "lucide-react";
 import Link from "next/link";
 
+import { useParams } from "next/navigation";
+
 import { apiRequest } from "@/lib/api";
 import type { MediaSummary } from "@/lib/types";
 
-export default function MediaDetailPage({ params }: { params: { mediaId: string } }) {
+export default function MediaDetailPage() {
+  const params = useParams<{ mediaId: string }>();
   const media = useQuery({ queryKey: ["media", params.mediaId], queryFn: () => apiRequest<MediaSummary>(`/media/${params.mediaId}`) });
   if (media.isLoading) return <div className="screen-loader">Opening title…</div>;
   if (!media.data) return <div className="empty-state"><div><h3>This title is unavailable.</h3><Link href="/discover" className="text-link">Return to discover</Link></div></div>;
