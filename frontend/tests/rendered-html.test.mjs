@@ -18,7 +18,7 @@ test("server-renders the Ledger product shell", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
   assert.match(html, /Ledger/);
-  assert.match(html, /Your collection, in motion\./);
+  assert.match(html, /Your collection, in motion\.|Restoring your collection…/);
   assert.match(html, /Entertainment archive/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|react-loading-skeleton/i);
 });

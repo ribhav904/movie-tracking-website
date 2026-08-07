@@ -15,8 +15,11 @@ const typeIcon: Record<MediaType, typeof Clapperboard> = {
 export function MediaCard({ media, compact = false }: { media: MediaSummary; compact?: boolean }) {
   const Icon = typeIcon[media.media_type];
   const year = media.release_date ? new Date(media.release_date).getFullYear() : null;
+  const href = media.media_id
+    ? `/media/${media.media_id}`
+    : `/media/provider/${encodeURIComponent(media.provider)}/${encodeURIComponent(media.external_id)}?media_type=${media.media_type}`;
   return (
-    <Link href={`/media/${media.media_id}`} className={`media-card ${compact ? "media-card--compact" : ""}`}>
+    <Link href={href} className={`media-card ${compact ? "media-card--compact" : ""}`}>
       <div className={`media-card__cover media-card__cover--${media.media_type}`}>
         {media.poster_url ? <img src={media.poster_url} alt="" /> : <span>{media.title.slice(0, 1)}</span>}
         <div className="media-card__cover-meta"><Icon size={14} /> {media.media_type}</div>
