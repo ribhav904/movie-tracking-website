@@ -93,39 +93,18 @@ export const demoActivity: Activity[] = [
 ];
 
 export const demoSummary: ReportSummary = {
-  library_items: 126,
-  completed_items: 74,
-  favorites: 18,
-  average_manual_rating: 8.2,
-};
-
-const activityCounts: Record<string, number> = {
-  "2026-01-02": 1,
-  "2026-01-11": 2,
-  "2026-02-06": 1,
-  "2026-02-14": 3,
-  "2026-03-08": 1,
-  "2026-03-23": 2,
-  "2026-04-17": 1,
-  "2026-05-03": 2,
-  "2026-05-18": 4,
-  "2026-06-05": 1,
-  "2026-06-21": 2,
-  "2026-07-12": 3,
-  "2026-07-26": 1,
-  "2026-08-02": 1,
-  "2026-08-04": 1,
-  "2026-08-05": 2,
-  "2026-08-06": 1,
-  "2026-08-07": 1,
+  library_items: 0,
+  completed_items: 0,
+  favorites: 0,
+  average_manual_rating: null,
 };
 
 export const demoYearReport: YearReport = {
   year: 2026,
-  total_events: 156,
-  active_days: Object.keys(activityCounts).length,
-  completed_items: 11,
-  calendar: Object.entries(activityCounts).map(([date, count]) => ({ date, count })),
+  total_events: 0,
+  active_days: 0,
+  completed_items: 0,
+  calendar: [],
 };
 
 export function getDemoResponse(path: string): unknown {
