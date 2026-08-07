@@ -47,6 +47,22 @@ class TrackingService:
             )
         return await self.repository.create_event(cycle, entry.media_id, payload)
 
+    async def add_entry_event(self, entry_id: UUID, payload: ActivityCreate) -> ActivityEvent:
+        entry = await self.library_repository.get(entry_id)
+        if entry is None:
+            raise NotFoundError("LIBRARY_ENTRY_NOT_FOUND", "The library entry does not exist.")
+
+        if payload.kind in {ActivityKind.NOTE, ActivityKind.RATED}:
+            return await self.repository.create_standalone_event(entry.media_id, payload)
+
+        cycle = await self.repository.get_active_cycle(entry_id)
+        if cycle is None:
+            cycle = await self.start_cycle(entry_id, CycleCreate(started_on=payload.occurred_on))
+
+        if payload.kind == ActivityKind.COMPLETED:
+            return await self.complete(cycle.id, occurred_on=payload.occurred_on, payload=payload)
+        return await self.add_event(cycle.id, payload)
+
     async def complete(
         self, cycle_id: UUID, *, occurred_on: date, payload: ActivityCreate
     ) -> ActivityEvent:

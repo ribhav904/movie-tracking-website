@@ -48,6 +48,14 @@ async def add_event(
     return ActivityRead.model_validate(await _service(session, user).add_event(cycle_id, payload))
 
 
+@router.post("/library/{entry_id}/events", response_model=ActivityRead, status_code=201)
+async def add_library_event(
+    entry_id: UUID, payload: ActivityCreate, session: SessionDep, user: CurrentUserDep
+) -> ActivityRead:
+    event = await _service(session, user).add_entry_event(entry_id, payload)
+    return ActivityRead.model_validate(event)
+
+
 @router.post("/cycles/{cycle_id}/complete", response_model=ActivityRead, status_code=201)
 async def complete_cycle(
     cycle_id: UUID, payload: CycleComplete, session: SessionDep, user: CurrentUserDep

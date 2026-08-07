@@ -10,7 +10,7 @@ export type PublicRating = {
 };
 
 export type MediaSummary = {
-  media_id: string;
+  media_id?: string | null;
   provider: string;
   external_id: string;
   media_type: MediaType;
@@ -37,9 +37,19 @@ export type Activity = {
   id: string;
   media_id: string;
   media?: MediaSummary;
-  kind: "session" | "progress" | "episode_watched" | "completed" | "note" | "rating";
+  kind: "started" | "session" | "progress" | "episode_watched" | "completed" | "note" | "rated";
   occurred_at: string;
   occurred_on: string;
+  duration_minutes?: number | null;
+  progress_after?: number | null;
+  notes?: string | null;
+};
+
+export type ActivityCreate = {
+  kind: Activity["kind"];
+  occurred_at: string;
+  occurred_on: string;
+  amount?: number | null;
   duration_minutes?: number | null;
   progress_after?: number | null;
   notes?: string | null;

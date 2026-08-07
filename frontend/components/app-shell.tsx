@@ -84,7 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="sidebar__footer">
           {!isBackendConfigured && <span className="preview-label">Preview data</span>}
-          <Link href="/settings" className="account-link">
+          <Link href="/settings" className="account-link" onClick={() => setMenuOpen(false)}>
             <span className="account-link__avatar" aria-hidden="true">{email.slice(0, 1).toUpperCase()}</span>
             <span className="account-link__text">
               <strong>{state === "preview" ? "Preview collection" : email}</strong>
@@ -97,9 +97,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="app-main">
         <header className="topbar">
-          <button className="icon-button topbar__menu" onClick={() => setMenuOpen(true)} aria-label="Open navigation">
-            <Menu size={20} />
-          </button>
+          {!menuOpen && <button className="icon-button topbar__menu" onClick={() => setMenuOpen(true)} aria-label="Open navigation"><Menu size={20} /></button>}
           <button className="command-search" onClick={() => router.push("/discover")}>
             <Search size={17} />
             <span>Search your next watch, read, or play</span>

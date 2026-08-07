@@ -50,6 +50,7 @@ def test_openapi_contains_primary_routes() -> None:
         "/api/v1/library",
         "/api/v1/library/{entry_id}",
         "/api/v1/library/{entry_id}/cycles",
+        "/api/v1/library/{entry_id}/events",
         "/api/v1/cycles/{cycle_id}",
         "/api/v1/cycles/{cycle_id}/events",
         "/api/v1/cycles/{cycle_id}/complete",

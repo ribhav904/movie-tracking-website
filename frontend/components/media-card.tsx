@@ -21,7 +21,7 @@ export function MediaCard({ media, compact = false }: { media: MediaSummary; com
   return (
     <Link href={href} className={`media-card ${compact ? "media-card--compact" : ""}`}>
       <div className={`media-card__cover media-card__cover--${media.media_type}`}>
-        {media.poster_url ? <img src={media.poster_url} alt="" /> : <span>{media.title.slice(0, 1)}</span>}
+        {media.poster_url ? <img src={media.poster_url} alt={`${media.title} cover`} /> : <span>{media.title.slice(0, 1)}</span>}
         <div className="media-card__cover-meta"><Icon size={14} /> {media.media_type}</div>
       </div>
       <div className="media-card__body">

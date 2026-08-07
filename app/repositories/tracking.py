@@ -27,6 +27,21 @@ class TrackingRepository:
             ),
         )
 
+    async def get_active_cycle(self, entry_id: UUID) -> ConsumptionCycle | None:
+        return cast(
+            ConsumptionCycle | None,
+            await self.session.scalar(
+                select(ConsumptionCycle)
+                .where(
+                    ConsumptionCycle.library_entry_id == entry_id,
+                    ConsumptionCycle.user_id == self.user_id,
+                    ConsumptionCycle.state == CycleState.IN_PROGRESS,
+                )
+                .order_by(ConsumptionCycle.sequence_number.desc())
+                .limit(1)
+            ),
+        )
+
     async def create_cycle(self, entry: LibraryEntry, payload: CycleCreate) -> ConsumptionCycle:
         sequence = await self.session.scalar(
             select(func.coalesce(func.max(ConsumptionCycle.sequence_number), 0) + 1).where(
@@ -62,6 +77,19 @@ class TrackingRepository:
         self.session.add(event)
         if payload.progress_after is not None:
             cycle.progress_value = payload.progress_after
+        await self.session.flush()
+        return event
+
+    async def create_standalone_event(
+        self, media_id: UUID, payload: ActivityCreate
+    ) -> ActivityEvent:
+        event = ActivityEvent(
+            user_id=self.user_id,
+            cycle_id=None,
+            media_id=media_id,
+            **payload.model_dump(),
+        )
+        self.session.add(event)
         await self.session.flush()
         return event
 
