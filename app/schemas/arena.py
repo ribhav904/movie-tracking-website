@@ -3,6 +3,7 @@ from uuid import UUID
 
 from app.db.models.enums import ArenaOutcome, MediaType
 from app.schemas.common import APIModel
+from app.schemas.media import MediaSummary
 
 
 class ArenaMatchup(APIModel):
@@ -10,6 +11,8 @@ class ArenaMatchup(APIModel):
     left_media_id: UUID
     right_media_id: UUID
     mode: str
+    left_media: MediaSummary
+    right_media: MediaSummary
 
 
 class ArenaComparisonCreate(APIModel):

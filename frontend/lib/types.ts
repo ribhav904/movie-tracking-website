@@ -95,6 +95,8 @@ export type ArenaMatchup = {
   left_media_id: string;
   right_media_id: string;
   mode: "guided" | "random";
+  left_media: MediaSummary;
+  right_media: MediaSummary;
 };
 
 export type ArenaRanking = {

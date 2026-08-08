@@ -4,7 +4,7 @@ from app.core.exceptions import ConflictError, NotFoundError
 from app.db.models.arena import ArenaComparison, ArenaRating
 from app.db.models.enums import ArenaOutcome, MediaType
 from app.repositories.arena import ArenaRepository
-from app.schemas.arena import ArenaRanking
+from app.schemas.arena import ArenaMatchup, ArenaRanking
 
 
 def expected_score(player_elo: float, opponent_elo: float) -> float:
@@ -15,20 +15,34 @@ def updated_elo(current: float, opponent: float, actual: float, k_factor: int) -
     return current + k_factor * (actual - expected_score(current, opponent))
 
 
-def battle_score(elo: float) -> float:
-    score = round(10 / (1 + 10 ** ((1500 - elo) / 400)), 1)
-    return min(9.9, max(0.1, score))
+def display_battle_score(elo: float, lowest_elo: float, highest_elo: float) -> float:
+    """Map a title's Elo to its position in this user's current 0–10 arena range."""
+    if highest_elo == lowest_elo:
+        return 5.0
+    score = round(10 * (elo - lowest_elo) / (highest_elo - lowest_elo), 1)
+    return min(10.0, max(0.0, score))
 
 
 class ArenaService:
     def __init__(self, repository: ArenaRepository) -> None:
         self.repository = repository
 
-    async def matchup(self, media_type: MediaType, mode: str) -> tuple[UUID, UUID]:
+    async def matchup(self, media_type: MediaType, mode: str) -> ArenaMatchup:
         pair = await self.repository.select_matchup(media_type, mode)
         if pair is None:
             raise NotFoundError("NO_ARENA_MATCHUP", "No unplayed eligible matchup is available.")
-        return pair[0].media_id, pair[1].media_id
+        left_id, right_id = pair[0].media_id, pair[1].media_id
+        summaries = await self.repository.media_summaries((left_id, right_id))
+        if left_id not in summaries or right_id not in summaries:
+            raise NotFoundError("ARENA_MEDIA_NOT_FOUND", "An Arena title could not be loaded.")
+        return ArenaMatchup(
+            media_type=media_type,
+            left_media_id=left_id,
+            right_media_id=right_id,
+            mode=mode,
+            left_media=summaries[left_id],
+            right_media=summaries[right_id],
+        )
 
     async def record(
         self,
@@ -83,11 +97,13 @@ class ArenaService:
         await self.repository.ensure_eligible_ratings(media_type)
         rows = await self.repository.rankings(media_type)
         total = len(rows)
+        lowest_elo = min((row.elo for row in rows), default=1500.0)
+        highest_elo = max((row.elo for row in rows), default=1500.0)
         return [
             ArenaRanking(
                 media_id=row.media_id,
                 elo=round(row.elo, 2),
-                battle_score=battle_score(row.elo),
+                battle_score=display_battle_score(row.elo, lowest_elo, highest_elo),
                 rank=index + 1,
                 percentile=round(100 * (total - index - 1) / max(total - 1, 1), 1),
                 matches=row.matches,

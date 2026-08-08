@@ -6,9 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.arena import ArenaComparison, ArenaRating
-from app.db.models.catalog import MediaItem
+from app.db.models.catalog import MediaItem, MediaSource
 from app.db.models.enums import ArenaOutcome, MediaType
 from app.db.models.tracking import ConsumptionRecord, LibraryEntry
+from app.schemas.media import MediaSummary, PublicRating
 
 
 class ArenaRepository:
@@ -169,6 +170,43 @@ class ArenaRepository:
                 .order_by(ArenaRating.elo.desc(), ArenaRating.media_id)
             )
         )
+
+    async def media_summaries(self, media_ids: tuple[UUID, UUID]) -> dict[UUID, MediaSummary]:
+        rows = await self.session.execute(
+            select(MediaItem, MediaSource)
+            .join(MediaSource, MediaSource.media_id == MediaItem.id)
+            .where(MediaItem.id.in_(media_ids))
+        )
+        summaries: dict[UUID, MediaSummary] = {}
+        for item, source in rows:
+            public_rating = (
+                PublicRating(
+                    source=item.public_rating_source,
+                    value=float(source.raw_rating),
+                    scale=float(source.raw_rating_scale),
+                    count=source.raw_rating_count,
+                    normalized_10=float(item.public_rating),
+                )
+                if (
+                    item.public_rating is not None
+                    and item.public_rating_source is not None
+                    and source.raw_rating is not None
+                    and source.raw_rating_scale is not None
+                )
+                else None
+            )
+            summaries[item.id] = MediaSummary(
+                media_id=item.id,
+                provider=source.provider,
+                external_id=source.external_id,
+                media_type=item.media_type,
+                title=item.title,
+                description=item.description,
+                release_date=item.release_date,
+                poster_url=item.poster_url,
+                public_rating=public_rating,
+            )
+        return summaries
 
 
 def _pair(left_id: UUID, right_id: UUID) -> tuple[UUID, UUID]:

@@ -27,8 +27,7 @@ async def get_matchup(
     user: CurrentUserDep,
     mode: Literal["guided", "random"] = Query(default="guided"),
 ) -> ArenaMatchup:
-    left, right = await _service(session, user).matchup(media_type, mode)
-    return ArenaMatchup(media_type=media_type, left_media_id=left, right_media_id=right, mode=mode)
+    return await _service(session, user).matchup(media_type, mode)
 
 
 @router.post("/{media_type}/comparisons", response_model=ArenaComparisonRead, status_code=201)
