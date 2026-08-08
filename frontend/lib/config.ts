@@ -1,7 +1,9 @@
 import { z } from "zod";
 
 const configSchema = z.object({
-  NEXT_PUBLIC_API_URL: z.string().url().optional(),
+  // Accept either a direct API URL for local development or a same-origin
+  // path that Vercel rewrites to the FastAPI service in production.
+  NEXT_PUBLIC_API_URL: z.string().min(1).optional(),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
 });
