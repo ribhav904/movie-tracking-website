@@ -32,7 +32,19 @@ export default function LibraryPage() {
   const library = useQuery({ queryKey: ["library"], queryFn: () => apiRequest<Page<LibraryEntry>>("/library?limit=100") });
   const rankings = useQueries({ queries: mediaTypes.map((mediaType) => ({ queryKey: ["arena", mediaType, "rankings"], queryFn: () => apiRequest<ArenaRanking[]>(`/arena/${mediaType}/rankings`) })) });
   const mediaMap = useMediaMap(library.data?.items.map((entry) => entry.media_id) ?? []);
-  const arenaByMedia = useMemo(() => new Map(rankings.flatMap((query) => query.data ?? []).map((ranking) => [ranking.media_id, ranking])), [rankings]);
+  const arenaByMedia = useMemo(() => {
+    const scores = new Map<string, ArenaRanking>();
+    for (const query of rankings) {
+      const items = query.data ?? [];
+      const low = Math.min(...items.map((item) => item.elo));
+      const high = Math.max(...items.map((item) => item.elo));
+      for (const item of items) {
+        const battleScore = high === low ? 5 : Math.round((10 * (item.elo - low) / (high - low)) * 10) / 10;
+        scores.set(item.media_id, { ...item, battle_score: battleScore });
+      }
+    }
+    return scores;
+  }, [rankings]);
   const entries = useMemo(() => {
     const filtered = (library.data?.items ?? [])
       .map((entry) => ({ ...entry, media: entry.media ?? mediaMap.get(entry.media_id), arena: arenaByMedia.get(entry.media_id) }))
