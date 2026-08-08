@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Equal, Info, Trophy } from "lucide-react";
 import { useState } from "react";
 
@@ -58,6 +58,21 @@ export default function ArenaPage() {
     comparison.reset();
   };
   const current = matchup.data;
+  // A Vercel/Render rollout can briefly serve the previous matchup shape.
+  // Fetch these only for that legacy response; normal Arena turns still use
+  // the single enriched matchup request.
+  const fallbackMedia = useQueries({
+    queries: [current?.left_media_id, current?.right_media_id].map((mediaId) => ({
+      queryKey: ["media", mediaId],
+      queryFn: () => apiRequest<MediaSummary>(`/media/${mediaId}`),
+      enabled: Boolean(current && mediaId && (!current.left_media || !current.right_media)),
+      retry: false,
+    })),
+  });
+  const leftMedia = current?.left_media ?? fallbackMedia[0].data;
+  const rightMedia = current?.right_media ?? fallbackMedia[1].data;
+  const loadingDetails = Boolean(current && (!leftMedia || !rightMedia) && fallbackMedia.some((query) => query.isLoading));
+  const detailsError = Boolean(current && (!leftMedia || !rightMedia) && fallbackMedia.some((query) => query.isError));
   const isTransitioning = comparison.isPending || matchup.isFetching;
 
   return <div className="page-stack">
@@ -67,13 +82,13 @@ export default function ArenaPage() {
       <span><Info size={15} /> No repeated pairs · ties allowed</span>
     </section>
     {!isBackendConfigured ? <ArenaEmpty message="Connect FastAPI and sign in to begin an Arena. Comparisons are never simulated in preview mode." /> : null}
-    {isBackendConfigured && matchup.isLoading && !current ? <ArenaLoading /> : null}
-    {isBackendConfigured && (matchup.isError || (!matchup.isLoading && !current)) ? <ArenaEmpty message="There is no eligible unplayed pair yet. Complete at least two items of this type to begin." /> : null}
-    {current ? <>
+    {isBackendConfigured && ((matchup.isLoading && !current) || loadingDetails) ? <ArenaLoading /> : null}
+    {isBackendConfigured && (matchup.isError || detailsError || (!matchup.isLoading && !current)) ? <ArenaEmpty message={detailsError ? "The pair was found, but its title details could not be loaded. Refresh and try again." : "There is no eligible unplayed pair yet. Complete at least two items of this type to begin."} /> : null}
+    {current && leftMedia && rightMedia ? <>
       <section className={`arena-matchup ${isTransitioning ? "arena-matchup--submitting" : ""}`} aria-busy={isTransitioning}>
-        <ArenaItem key={current.left_media_id} media={current.left_media} onChoose={() => comparison.mutate("left")} disabled={isTransitioning} />
+        <ArenaItem key={current.left_media_id} media={leftMedia} onChoose={() => comparison.mutate("left")} disabled={isTransitioning} />
         <div className="arena-matchup__middle"><span>or</span><button onClick={() => comparison.mutate("tie")} className="tie-button" aria-label="Choose a tie" disabled={isTransitioning}><Equal size={19} /></button><small>Tie</small></div>
-        <ArenaItem key={current.right_media_id} media={current.right_media} onChoose={() => comparison.mutate("right")} disabled={isTransitioning} />
+        <ArenaItem key={current.right_media_id} media={rightMedia} onChoose={() => comparison.mutate("right")} disabled={isTransitioning} />
       </section>
       {comparison.isError ? <p className="muted-copy">This comparison could not be recorded. Your pair has not been changed; try again.</p> : null}
     </> : null}

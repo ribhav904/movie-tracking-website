@@ -95,8 +95,10 @@ export type ArenaMatchup = {
   left_media_id: string;
   right_media_id: string;
   mode: "guided" | "random";
-  left_media: MediaSummary;
-  right_media: MediaSummary;
+  // Older deployed API responses contain only the IDs. Keeping these optional
+  // lets the client recover during a rolling deployment instead of crashing.
+  left_media?: MediaSummary;
+  right_media?: MediaSummary;
 };
 
 export type ArenaRanking = {
