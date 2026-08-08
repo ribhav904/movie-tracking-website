@@ -1,5 +1,5 @@
 export type MediaType = "movie" | "tv" | "game" | "book";
-export type LibraryStatus = "planned" | "in_progress" | "completed" | "paused" | "dropped";
+export type LibraryStatus = "planned" | "in_progress" | "caught_up" | "completed" | "paused" | "dropped";
 
 export type PublicRating = {
   source: string;
@@ -22,6 +22,14 @@ export type MediaSummary = {
   genres?: string[];
 };
 
+export type MediaDetail = MediaSummary & {
+  original_title?: string | null;
+  original_language?: string | null;
+  backdrop_url?: string | null;
+  credits?: Array<{ name: string; role: string; character?: string | null; order?: number | null }>;
+  extra?: Record<string, unknown>;
+};
+
 export type LibraryEntry = {
   id: string;
   media_id: string;
@@ -33,26 +41,36 @@ export type LibraryEntry = {
   updated_at: string;
 };
 
-export type Activity = {
+export type Consumption = {
   id: string;
-  media_id: string;
-  media?: MediaSummary;
-  kind: "started" | "session" | "progress" | "episode_watched" | "completed" | "note" | "rated";
-  occurred_at: string;
-  occurred_on: string;
-  duration_minutes?: number | null;
-  progress_after?: number | null;
+  library_entry_id: string;
+  sequence_number: number;
+  completed_on?: string | null;
+  season_id?: string | null;
+  rating?: number | null;
   notes?: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
-export type ActivityCreate = {
-  kind: Activity["kind"];
-  occurred_at: string;
-  occurred_on: string;
-  amount?: number | null;
-  duration_minutes?: number | null;
-  progress_after?: number | null;
-  notes?: string | null;
+export type SeasonSummary = {
+  id: string;
+  season_number: number;
+  title?: string | null;
+  air_date?: string | null;
+  episode_count?: number | null;
+  watched_count: number;
+  latest_rating?: number | null;
+  latest_completed_on?: string | null;
+};
+
+export type HistoryItem = Consumption & {
+  media_id: string;
+  media_type: MediaType;
+  title: string;
+  poster_url?: string | null;
+  season_title?: string | null;
+  season_number?: number | null;
 };
 
 export type ReportSummary = {

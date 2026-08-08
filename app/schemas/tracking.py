@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from app.db.models.enums import ActivityKind, CycleState, LibraryStatus
+from app.db.models.enums import LibraryStatus
 from app.schemas.common import APIModel
 
 
@@ -16,7 +16,7 @@ class LibraryCreate(APIModel):
 
     @field_validator("manual_rating")
     @classmethod
-    def validate_rating(cls, value: float | None) -> float | None:
+    def validate_manual_rating(cls, value: float | None) -> float | None:
         if value is not None and (not 1 <= value <= 10 or value * 2 != round(value * 2)):
             raise ValueError("manual_rating must be from 1 to 10 in half-point steps")
         return value
@@ -30,8 +30,8 @@ class LibraryUpdate(APIModel):
 
     @field_validator("manual_rating")
     @classmethod
-    def validate_rating(cls, value: float | None) -> float | None:
-        return LibraryCreate.validate_rating(value)
+    def validate_manual_rating(cls, value: float | None) -> float | None:
+        return LibraryCreate.validate_manual_rating(value)
 
 
 class LibraryRead(APIModel):
@@ -45,58 +45,58 @@ class LibraryRead(APIModel):
     updated_at: datetime
 
 
-class CycleCreate(APIModel):
-    started_on: date
-    progress_value: float | None = Field(default=None, ge=0)
-    progress_unit: str | None = Field(default=None, max_length=40)
+class ConsumptionCreate(APIModel):
+    completed_on: date | None = None
+    season_id: UUID | None = None
+    rating: float | None = None
     notes: str | None = Field(default=None, max_length=20_000)
 
+    @field_validator("rating")
+    @classmethod
+    def validate_rating(cls, value: float | None) -> float | None:
+        if value is not None and (not 1 <= value <= 10 or value * 2 != round(value * 2)):
+            raise ValueError("rating must be from 1 to 10 in half-point steps")
+        return value
 
-class CycleUpdate(APIModel):
-    state: CycleState | None = None
-    progress_value: float | None = Field(default=None, ge=0)
-    progress_unit: str | None = Field(default=None, max_length=40)
+
+class ConsumptionUpdate(APIModel):
+    completed_on: date | None = None
+    rating: float | None = None
     notes: str | None = Field(default=None, max_length=20_000)
 
+    @field_validator("rating")
+    @classmethod
+    def validate_rating(cls, value: float | None) -> float | None:
+        return ConsumptionCreate.validate_rating(value)
 
-class CycleRead(APIModel):
+
+class ConsumptionRead(APIModel):
     id: UUID
     library_entry_id: UUID
+    season_id: UUID | None
     sequence_number: int
-    state: CycleState
-    started_on: date
     completed_on: date | None
-    progress_value: float | None
-    progress_unit: str | None
+    rating: float | None
     notes: str | None
+    created_at: datetime
+    updated_at: datetime
 
 
-class CycleComplete(APIModel):
-    occurred_at: datetime
-    occurred_on: date
-    notes: str | None = Field(default=None, max_length=20_000)
-
-
-class ActivityCreate(APIModel):
-    kind: ActivityKind
-    occurred_at: datetime
-    occurred_on: date
-    amount: float | None = Field(default=None, ge=0)
-    duration_minutes: int | None = Field(default=None, ge=0, le=100_000)
-    progress_after: float | None = Field(default=None, ge=0)
-    episode_id: UUID | None = None
-    notes: str | None = Field(default=None, max_length=20_000)
-
-
-class ActivityRead(APIModel):
+class SeasonSummary(APIModel):
     id: UUID
-    cycle_id: UUID | None
+    season_number: int
+    title: str | None
+    air_date: date | None
+    episode_count: int | None
+    watched_count: int = 0
+    latest_completed_on: date | None = None
+    latest_rating: float | None = None
+
+
+class HistoryItem(ConsumptionRead):
     media_id: UUID
-    episode_id: UUID | None
-    kind: ActivityKind
-    occurred_at: datetime
-    occurred_on: date
-    amount: float | None
-    duration_minutes: int | None
-    progress_after: float | None
-    notes: str | None
+    title: str
+    media_type: str
+    poster_url: str | None = None
+    season_title: str | None = None
+    season_number: int | None = None

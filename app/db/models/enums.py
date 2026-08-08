@@ -24,17 +24,22 @@ class LibraryStatus(StrEnum):
     PLANNED = "planned"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
+    CAUGHT_UP = "caught_up"
     PAUSED = "paused"
     DROPPED = "dropped"
 
 
 class CycleState(StrEnum):
+    """Legacy enum retained only so the initial migration can bootstrap a fresh database."""
+
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     ABANDONED = "abandoned"
 
 
 class ActivityKind(StrEnum):
+    """Legacy enum retained only so the initial migration can bootstrap a fresh database."""
+
     STARTED = "started"
     PROGRESS = "progress"
     SESSION = "session"

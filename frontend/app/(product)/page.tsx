@@ -8,11 +8,11 @@ import { ActivityHeatmap } from "@/components/activity-heatmap";
 import { MediaCard } from "@/components/media-card";
 import { PageHeader } from "@/components/page-header";
 import { apiRequest } from "@/lib/api";
-import type { Activity, LibraryEntry, Page, ReportSummary, YearReport } from "@/lib/types";
+import type { HistoryItem, LibraryEntry, Page, ReportSummary, YearReport } from "@/lib/types";
 
 export default function TodayPage() {
   const summary = useQuery({ queryKey: ["reports", "summary"], queryFn: () => apiRequest<ReportSummary>("/reports/summary") });
-  const activity = useQuery({ queryKey: ["activity", 6], queryFn: () => apiRequest<Page<Activity>>("/activity?limit=6") });
+  const history = useQuery({ queryKey: ["history", 6], queryFn: () => apiRequest<Page<HistoryItem>>("/history?limit=6") });
   const library = useQuery({ queryKey: ["library", "current"], queryFn: () => apiRequest<Page<LibraryEntry>>("/library?limit=12") });
   const report = useQuery({ queryKey: ["report", 2026], queryFn: () => apiRequest<YearReport>("/reports/year/2026") });
   const current = library.data?.items.filter((entry) => entry.status === "in_progress") ?? [];
@@ -22,7 +22,7 @@ export default function TodayPage() {
       <PageHeader
         eyebrow="Friday, 7 August"
         title="Your collection, in motion."
-        description="Pick up where you left off, record the small things, and keep the year in view."
+        description="Keep your completed films, seasons, games, and books in one clear record."
         actions={<Link href="/discover" className="button button--secondary"><Plus size={16} /> Add to library</Link>}
       />
 
@@ -40,15 +40,15 @@ export default function TodayPage() {
 
       <div className="dashboard-columns">
         <section className="content-section panel panel--heatmap">
-          <div className="section-heading"><div><p className="eyebrow">The year so far</p><h2>Activity, not streaks</h2></div><Link href="/reports">Full report <ArrowUpRight size={15} /></Link></div>
+          <div className="section-heading"><div><p className="eyebrow">The year so far</p><h2>Completed, not streaks</h2></div><Link href="/reports">Full report <ArrowUpRight size={15} /></Link></div>
           {report.data ? <ActivityHeatmap year={report.data.year} calendar={report.data.calendar} /> : <div className="skeleton-block" />}
-          <p className="muted-copy">{report.data?.active_days ?? 0} days with an intentional entry. A quieter week still belongs here.</p>
+          <p className="muted-copy">{report.data?.active_days ?? 0} days with a completion. Undated past completions stay out of this view.</p>
         </section>
 
         <section className="content-section panel recent-panel">
-          <div className="section-heading"><div><p className="eyebrow">Recently recorded</p><h2>Latest activity</h2></div><Link href="/activity">All activity <ArrowUpRight size={15} /></Link></div>
+          <div className="section-heading"><div><p className="eyebrow">Recently completed</p><h2>Latest finishes</h2></div><Link href="/activity">All history <ArrowUpRight size={15} /></Link></div>
           <ol className="activity-list">
-            {(activity.data?.items ?? []).slice(0, 4).map((item) => <li key={item.id}><span className="activity-list__icon"><Clock3 size={15} /></span><div><strong>{item.media?.title ?? "Library item"}</strong><p>{activityLabel(item)}</p></div><time>{new Date(item.occurred_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</time></li>)}
+            {(history.data?.items ?? []).slice(0, 4).map((item) => <li key={item.id}><span className="activity-list__icon"><Clock3 size={15} /></span><div><strong>{item.title}</strong><p>{item.season_number ? `Season ${item.season_number}` : "Completed"}{item.rating ? ` · ${item.rating}/10` : ""}</p></div><time>{new Date(`${item.completed_on}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</time></li>)}
           </ol>
         </section>
       </div>
@@ -60,13 +60,6 @@ export default function TodayPage() {
       </section>
     </div>
   );
-}
-
-function activityLabel(item: Activity) {
-  if (item.kind === "completed") return "Marked complete";
-  if (item.kind === "episode_watched") return item.notes ?? "Episode watched";
-  if (item.kind === "rating") return item.notes ?? "Updated rating";
-  return item.duration_minutes ? `${item.duration_minutes} minute session` : "Activity recorded";
 }
 
 function EmptyCurrent() {

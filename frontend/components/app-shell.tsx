@@ -2,7 +2,6 @@
 
 import {
   Activity,
-  BookOpen,
   ChartNoAxesCombined,
   ChevronDown,
   Clapperboard,
@@ -27,7 +26,7 @@ const navigation = [
   { href: "/", label: "Today", icon: Clapperboard },
   { href: "/discover", label: "Discover", icon: Search },
   { href: "/library", label: "Library", icon: LibraryBig },
-  { href: "/activity", label: "Activity", icon: Activity },
+  { href: "/activity", label: "History", icon: Activity },
   { href: "/reports", label: "Reports", icon: ChartNoAxesCombined },
   { href: "/arena", label: "Battle Arena", icon: Swords },
   { href: "/recommendations", label: "For you", icon: Heart },
@@ -107,10 +106,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <button className="icon-button" onClick={toggleTheme} aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}>
               {resolvedTheme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <Link href="/activity#log" className="button button--primary topbar__log">
-              <BookOpen size={16} />
-              Log activity
-            </Link>
           </div>
         </header>
         <main className="page-content">{children}</main>

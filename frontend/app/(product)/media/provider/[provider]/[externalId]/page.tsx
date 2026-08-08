@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 
 import { MediaDetailView } from "@/components/media-detail-view";
 import { apiRequest } from "@/lib/api";
-import type { MediaSummary, MediaType } from "@/lib/types";
+import type { MediaDetail, MediaType } from "@/lib/types";
 
 const mediaTypes = new Set<MediaType>(["movie", "tv", "game", "book"]);
 
@@ -16,7 +16,7 @@ export default function ProviderMediaDetailPage() {
   const mediaType = mediaTypes.has(requestedType as MediaType) ? requestedType as MediaType : null;
   const media = useQuery({
     queryKey: ["provider-media", params.provider, params.externalId, mediaType],
-    queryFn: () => apiRequest<MediaSummary>(`/media/provider/${encodeURIComponent(params.provider)}/${encodeURIComponent(params.externalId)}?media_type=${mediaType}`),
+    queryFn: () => apiRequest<MediaDetail>(`/media/provider/${encodeURIComponent(params.provider)}/${encodeURIComponent(params.externalId)}?media_type=${mediaType}`),
     enabled: mediaType !== null,
   });
 

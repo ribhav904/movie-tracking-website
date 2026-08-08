@@ -6,15 +6,27 @@ from fastapi import APIRouter, Query, Request
 from app.api.dependencies import CurrentUserDep, SessionDep
 from app.db.models.enums import MediaProvider, MediaType
 from app.repositories.catalog import CatalogRepository
+from app.repositories.library import LibraryRepository
+from app.repositories.tracking import TrackingRepository
 from app.schemas.common import Page
 from app.schemas.media import MediaDetail, MediaImportRequest, MediaSummary
+from app.schemas.tracking import SeasonSummary
 from app.services.media import MediaService
+from app.services.tracking import TrackingService
 
 router = APIRouter(prefix="/media", tags=["media"])
 
 
 def _service(request: Request, session: SessionDep) -> MediaService:
     return MediaService(request.app.state.providers, CatalogRepository(session))
+
+
+def _tracking_service(session: SessionDep, user: CurrentUserDep) -> TrackingService:
+    return TrackingService(
+        TrackingRepository(session, user.id),
+        LibraryRepository(session, user.id),
+        CatalogRepository(session),
+    )
 
 
 @router.get("/search", response_model=Page[MediaSummary])
@@ -74,6 +86,23 @@ async def get_media(
     _user: CurrentUserDep,
 ) -> MediaSummary:
     return await _service(request, session).by_id(media_id)
+
+
+@router.get("/{media_id}/details", response_model=MediaDetail)
+async def get_media_detail(
+    media_id: UUID,
+    request: Request,
+    session: SessionDep,
+    _user: CurrentUserDep,
+) -> MediaDetail:
+    return await _service(request, session).detail_by_id(media_id)
+
+
+@router.get("/{media_id}/seasons", response_model=list[SeasonSummary])
+async def list_tv_seasons(
+    media_id: UUID, session: SessionDep, user: CurrentUserDep
+) -> list[SeasonSummary]:
+    return await _tracking_service(session, user).season_summaries(media_id)
 
 
 @router.get("/{media_id}/recommendations", response_model=Page[MediaSummary])

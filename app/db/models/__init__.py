@@ -13,8 +13,7 @@ from app.db.models.catalog import (
 )
 from app.db.models.identity import AdminAuditLog, Membership, Profile
 from app.db.models.tracking import (
-    ActivityEvent,
-    ConsumptionCycle,
+    ConsumptionRecord,
     CustomList,
     CustomListItem,
     LibraryEntry,
@@ -23,12 +22,11 @@ from app.db.models.tracking import (
 )
 
 __all__ = [
-    "ActivityEvent",
     "AdminAuditLog",
     "ArenaComparison",
     "ArenaRating",
     "BookDetails",
-    "ConsumptionCycle",
+    "ConsumptionRecord",
     "CustomList",
     "CustomListItem",
     "GameDetails",

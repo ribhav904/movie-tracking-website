@@ -11,7 +11,7 @@ import type { LibraryEntry, LibraryStatus, Page } from "@/lib/types";
 import { useMediaMap } from "@/lib/use-media-map";
 
 const statuses: Array<{ value: "all" | LibraryStatus; label: string }> = [
-  { value: "all", label: "Everything" }, { value: "in_progress", label: "In progress" }, { value: "planned", label: "Planned" }, { value: "completed", label: "Completed" }, { value: "paused", label: "Paused" },
+  { value: "all", label: "Everything" }, { value: "in_progress", label: "In progress" }, { value: "caught_up", label: "Caught up" }, { value: "planned", label: "Planned" }, { value: "completed", label: "Completed" }, { value: "paused", label: "Paused" },
 ];
 
 export default function LibraryPage() {
