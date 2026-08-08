@@ -48,8 +48,9 @@ export function MediaDetailView({ item }: { item: MediaDetail }) {
     onSuccess: refresh,
   });
   const error = addMutation.error ?? deleteMutation.error;
-  const actionLabel = item.media_type === "movie" ? "watched" : item.media_type === "game" ? "completed" : "read";
+  const actionLabel = item.media_type === "movie" || item.media_type === "tv" ? "watched" : item.media_type === "game" ? "completed" : "read";
   const recordsBySeason = useMemo(() => new Map(records.data?.map((record) => [record.season_id, record]) ?? []), [records.data]);
+  const wholeShowRecords = useMemo(() => (records.data ?? []).filter((record) => record.season_id == null), [records.data]);
 
   return <div className="media-detail">
     <Link className="back-link" href="/discover"><ArrowLeft size={16} /> Discover</Link>
@@ -72,8 +73,9 @@ export function MediaDetailView({ item }: { item: MediaDetail }) {
     </section>
 
     {item.media_type === "tv" && <section className="completion-section panel">
-      <div className="section-heading"><div><p className="eyebrow">Season tracking</p><h2>Watch a show season by season.</h2></div></div>
-      {!entry && <p className="muted-copy">Add this show to your library first. The arena still rates the show as one whole title.</p>}
+      <div className="section-heading"><div><p className="eyebrow">Show and season tracking</p><h2>Rate the whole show, then every season separately.</h2></div></div>
+      {!entry && <p className="muted-copy">Add this show to your library first. The Battle Arena always ranks the show as one whole title.</p>}
+      {entry && <div className="whole-show-row"><div><strong>Whole show</strong><p>{wholeShowRecords.length ? `${wholeShowRecords.length} completion${wholeShowRecords.length === 1 ? "" : "s"}${entry.manual_rating ? ` · ${entry.manual_rating}/10` : ""}` : "Not rated as a whole yet"}</p></div><button className="button button--secondary" onClick={() => setTarget({})}>{wholeShowRecords.length ? <><RotateCcw size={16} /> Rewatch whole show</> : <><Check size={16} /> Rate whole show</>}</button></div>}
       {entry && <div className="season-list">{seasons.data?.filter((season) => season.season_number > 0).map((season) => {
         const last = recordsBySeason.get(season.id);
         return <article className="season-row" key={season.id}><div><strong>{season.title ?? `Season ${season.season_number}`}</strong><p>{season.watched_count ? `${season.watched_count} watch${season.watched_count === 1 ? "" : "es"}${season.latest_rating ? ` · ${season.latest_rating}/10` : ""}` : "Not logged yet"}</p></div><button className="button button--secondary" onClick={() => setTarget({ season })}>{last ? <><RotateCcw size={16} /> Rewatch</> : <><Check size={16} /> Mark watched</>}</button></article>;
@@ -101,7 +103,7 @@ function CompletionForm({ item, entry, target, record, onClose, onSaved }: { ite
     },
     onSuccess: async () => { await onSaved(); onClose(); },
   });
-  const label = target?.season ? target.season.title ?? `Season ${target.season.season_number}` : item.title;
+  const label = target?.season ? target.season.title ?? `Season ${target.season.season_number}` : item.media_type === "tv" ? `${item.title} · Whole show` : item.title;
   return <div className="modal-backdrop" role="presentation"><section className="completion-modal panel" role="dialog" aria-modal="true" aria-labelledby="completion-title"><div className="activity-form__heading"><div><p className="eyebrow">{record ? "Edit completion" : "Log completion"}</p><h2 id="completion-title">{label}</h2></div><button type="button" className="icon-button" onClick={onClose} aria-label="Close form"><X size={18} /></button></div><form onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); save.mutate(); }}>
     <fieldset><legend>When did you finish it?</legend><label><input type="radio" checked={dateMode === "today"} onChange={() => setDateMode("today")} /> Today</label><label><input type="radio" checked={dateMode === "specific"} onChange={() => setDateMode("specific")} /> On a specific date</label><label><input type="radio" checked={dateMode === "unknown"} onChange={() => setDateMode("unknown")} /> In the past, date unknown</label></fieldset>
     {dateMode === "specific" && <label>Date<input type="date" value={date} onChange={(event) => setDate(event.target.value)} required /></label>}

@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Query, Request
 
 from app.api.dependencies import CurrentUserDep, SessionDep
-from app.db.models.enums import MediaProvider, MediaType
+from app.db.models.enums import DiscoverMode, MediaProvider, MediaType
 from app.repositories.catalog import CatalogRepository
 from app.repositories.library import LibraryRepository
 from app.repositories.tracking import TrackingRepository
@@ -35,11 +35,17 @@ async def search_media(
     session: SessionDep,
     _user: CurrentUserDep,
     query: Annotated[str, Query(min_length=1, max_length=200)],
-    media_type: MediaType,
+    media_type: MediaType | None = None,
     page: Annotated[int, Query(ge=1, le=100)] = 1,
 ) -> Page[MediaSummary]:
-    items = await _service(request, session).search(query, media_type, page)
-    return Page(items=items, next_cursor=str(page + 1) if len(items) == 20 else None)
+    service = _service(request, session)
+    items = (
+        await service.search(query, media_type, page)
+        if media_type is not None
+        else await service.search_all(query, page)
+    )
+    page_size = 20 if media_type is not None else 40
+    return Page(items=items, next_cursor=str(page + 1) if len(items) == page_size else None)
 
 
 @router.get("/discover", response_model=Page[MediaSummary])
@@ -48,9 +54,10 @@ async def discover_media(
     session: SessionDep,
     _user: CurrentUserDep,
     media_type: MediaType,
+    mode: DiscoverMode = DiscoverMode.TRENDING,
     page: Annotated[int, Query(ge=1, le=100)] = 1,
 ) -> Page[MediaSummary]:
-    items = await _service(request, session).discover(media_type, page)
+    items = await _service(request, session).discover(media_type, page, mode)
     return Page(items=items, next_cursor=str(page + 1) if len(items) == 20 else None)
 
 

@@ -5,7 +5,7 @@ from typing import Any
 
 import httpx
 
-from app.db.models.enums import MediaType
+from app.db.models.enums import DiscoverMode, MediaType
 from app.schemas.media import MediaDetail, MediaSummary
 
 
@@ -47,5 +47,7 @@ class MediaProviderClient(ABC):
     @abstractmethod
     async def detail(self, external_id: str, media_type: MediaType) -> MediaDetail: ...
 
-    async def discover(self, media_type: MediaType, *, page: int = 1) -> list[MediaSummary]:
+    async def discover(
+        self, media_type: MediaType, *, page: int = 1, mode: DiscoverMode = DiscoverMode.TRENDING
+    ) -> list[MediaSummary]:
         return []

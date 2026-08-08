@@ -77,6 +77,10 @@ class ArenaService:
         )
 
     async def rankings(self, media_type: MediaType) -> list[ArenaRanking]:
+        # Expose every eligible completed title in the library immediately,
+        # including its provisional 1500 Elo, rather than only after the user
+        # opens a first matchup.
+        await self.repository.ensure_eligible_ratings(media_type)
         rows = await self.repository.rankings(media_type)
         total = len(rows)
         return [

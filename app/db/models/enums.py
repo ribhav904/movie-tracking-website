@@ -13,6 +13,13 @@ class MediaType(StrEnum):
     BOOK = "book"
 
 
+class DiscoverMode(StrEnum):
+    TRENDING = "trending"
+    POPULAR = "popular"
+    TOP_RATED = "top_rated"
+    RECENT = "recent"
+
+
 class MediaProvider(StrEnum):
     TMDB = "tmdb"
     IGDB = "igdb"
