@@ -58,7 +58,7 @@ export default function ArenaPage() {
 
   return <div className="page-stack">
     <PageHeader eyebrow="Battle Arena" title="Which one stays with you?" description="A deliberate head-to-head comparison creates a Battle Score that remains separate from your manual and public ratings." />
-    <section className="arena-controls"><div className="segmented-control">{types.map((type) => <button key={type.value} className={mediaType === type.value ? "is-active" : ""} onClick={() => changeType(type)}>{type.label}</button>)}</div><span><Info size={15} /> No repeated pairs · ties allowed</span></section>
+    <section className="arena-controls"><div className="segmented-control">{types.map((type) => <button key={type.value} className={mediaType === type.value ? "is-active" : ""} onClick={() => changeType(type.value)}>{type.label}</button>)}</div><span><Info size={15} /> No repeated pairs · ties allowed</span></section>
     {!isBackendConfigured ? <ArenaEmpty message="Connect FastAPI and sign in to begin an Arena. Comparisons are never simulated in preview mode." /> : null}
     {isBackendConfigured && matchup.isLoading ? <ArenaEmpty message="Finding an eligible pair…" /> : null}
     {isBackendConfigured && (matchup.isError || !matchup.data || !left.data || !right.data) ? <ArenaEmpty message="There is no eligible unplayed pair yet. Complete at least two items of this type to begin." /> : null}
