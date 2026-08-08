@@ -64,7 +64,9 @@ class LibraryRepository:
         result = await self.session.execute(
             select(
                 func.count(LibraryEntry.id),
-                func.count(LibraryEntry.id).filter(LibraryEntry.status == "completed"),
+                func.count(LibraryEntry.id).filter(
+                    LibraryEntry.status.in_(["completed", "caught_up"])
+                ),
                 func.count(LibraryEntry.id).filter(LibraryEntry.favorite.is_(True)),
                 func.avg(LibraryEntry.manual_rating),
             ).where(LibraryEntry.user_id == self.user_id)

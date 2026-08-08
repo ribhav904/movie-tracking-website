@@ -52,7 +52,35 @@ class LibraryEntry(TimestampMixin, Base):
     notes: Mapped[str | None] = mapped_column(Text)
 
 
-class ConsumptionCycle(TimestampMixin, Base):
+class ConsumptionRecord(TimestampMixin, Base):
+    __tablename__ = "consumption_records"
+    __table_args__ = (
+        UniqueConstraint("library_entry_id", "sequence_number"),
+        CheckConstraint(
+            "rating is null or (rating >= 1 and rating <= 10 and rating * 2 = trunc(rating * 2))",
+            name="consumption_rating_half_steps",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("app.profiles.user_id", ondelete="CASCADE"), index=True
+    )
+    library_entry_id: Mapped[UUID] = mapped_column(
+        ForeignKey("app.library_entries.id", ondelete="CASCADE"), index=True
+    )
+    sequence_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    completed_on: Mapped[date | None] = mapped_column(Date)
+    season_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("app.tv_seasons.id", ondelete="CASCADE"), index=True
+    )
+    rating: Mapped[float | None] = mapped_column(Numeric(3, 1))
+    notes: Mapped[str | None] = mapped_column(Text)
+
+
+class LegacyConsumptionCycle(TimestampMixin, Base):
+    """Compatibility model for the already-merged initial migration only."""
+
     __tablename__ = "consumption_cycles"
     __table_args__ = (UniqueConstraint("library_entry_id", "sequence_number"),)
 
@@ -75,7 +103,9 @@ class ConsumptionCycle(TimestampMixin, Base):
     notes: Mapped[str | None] = mapped_column(Text)
 
 
-class ActivityEvent(Base):
+class LegacyActivityEvent(Base):
+    """Compatibility model for the already-merged initial migration only."""
+
     __tablename__ = "activity_events"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -90,12 +120,7 @@ class ActivityEvent(Base):
         ForeignKey("app.tv_episodes.id", ondelete="SET NULL")
     )
     kind: Mapped[ActivityKind] = mapped_column(
-        Enum(
-            ActivityKind,
-            name="activity_kind",
-            schema="app",
-            values_callable=enum_values,
-        ),
+        Enum(ActivityKind, name="activity_kind", schema="app", values_callable=enum_values),
         nullable=False,
     )
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

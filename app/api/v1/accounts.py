@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.api.dependencies import CurrentUserDep, SessionDep
 from app.core.exceptions import ConflictError, NotFoundError
 from app.db.models.identity import Membership, Profile
-from app.db.models.tracking import ActivityEvent, ConsumptionCycle, LibraryEntry
+from app.db.models.tracking import ConsumptionRecord, LibraryEntry
 from app.schemas.accounts import ProfileRead, ProfileUpdate
 from app.services.admin import AdminService
 
@@ -49,11 +49,8 @@ async def export_account(session: SessionDep, user: CurrentUserDep) -> dict[str,
     library = list(
         await session.scalars(select(LibraryEntry).where(LibraryEntry.user_id == user.id))
     )
-    cycles = list(
-        await session.scalars(select(ConsumptionCycle).where(ConsumptionCycle.user_id == user.id))
-    )
-    activity = list(
-        await session.scalars(select(ActivityEvent).where(ActivityEvent.user_id == user.id))
+    consumptions = list(
+        await session.scalars(select(ConsumptionRecord).where(ConsumptionRecord.user_id == user.id))
     )
     return cast(
         dict[str, object],
@@ -62,8 +59,7 @@ async def export_account(session: SessionDep, user: CurrentUserDep) -> dict[str,
                 "profile": profile,
                 "membership": membership,
                 "library": library,
-                "cycles": cycles,
-                "activity": activity,
+                "consumptions": consumptions,
             }
         ),
     )

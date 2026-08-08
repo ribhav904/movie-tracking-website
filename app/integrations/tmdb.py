@@ -88,36 +88,20 @@ class TMDBClient(MediaProviderClient):
         ]
         extra: dict[str, object] = {"runtime_minutes": data.get("runtime")}
         if media_type == MediaType.TV:
-            seasons = []
-            for season in data.get("seasons", []):
-                season_number = season.get("season_number")
-                if season_number is None:
-                    continue
-                season_response = await self.request(
-                    "GET",
-                    f"{API}/tv/{external_id}/season/{season_number}",
-                    headers=self.headers,
-                )
-                season_data = season_response.json()
-                seasons.append(
-                    {
-                        "season_number": season_number,
-                        "title": season.get("name"),
-                        "air_date": season.get("air_date"),
-                        "episode_count": season.get("episode_count"),
-                        "episodes": [
-                            {
-                                "episode_number": episode.get("episode_number"),
-                                "title": episode.get("name") or "Untitled",
-                                "description": episode.get("overview") or None,
-                                "air_date": episode.get("air_date"),
-                                "runtime_minutes": episode.get("runtime"),
-                            }
-                            for episode in season_data.get("episodes", [])
-                            if episode.get("episode_number") is not None
-                        ],
-                    }
-                )
+            # One title request is enough for season-level tracking. Fetching
+            # every season and episode here made a single show page issue an
+            # unbounded burst of provider calls.
+            seasons = [
+                {
+                    "season_number": season.get("season_number"),
+                    "title": season.get("name"),
+                    "air_date": season.get("air_date"),
+                    "episode_count": season.get("episode_count"),
+                    "episodes": [],
+                }
+                for season in data.get("seasons", [])
+                if season.get("season_number") is not None
+            ]
             extra.update(
                 {
                     "status": data.get("status"),

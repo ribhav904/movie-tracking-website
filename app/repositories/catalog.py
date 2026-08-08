@@ -28,6 +28,15 @@ class CatalogRepository:
     async def get(self, media_id: UUID) -> MediaItem | None:
         return await self.session.get(MediaItem, media_id)
 
+    async def list_seasons(self, media_id: UUID) -> list[TVSeason]:
+        rows = await self.session.scalars(
+            select(TVSeason).where(TVSeason.media_id == media_id).order_by(TVSeason.season_number)
+        )
+        return list(rows)
+
+    async def tv_details(self, media_id: UUID) -> TVDetails | None:
+        return await self.session.get(TVDetails, media_id)
+
     async def get_by_source(
         self, provider: MediaProvider, media_type: MediaType, external_id: str
     ) -> tuple[MediaItem, MediaSource] | None:
@@ -42,6 +51,12 @@ class CatalogRepository:
         )
         row = result.one_or_none()
         return cast(tuple[MediaItem, MediaSource], tuple(row)) if row else None
+
+    async def source_for_media(self, media_id: UUID) -> MediaSource | None:
+        return cast(
+            MediaSource | None,
+            await self.session.scalar(select(MediaSource).where(MediaSource.media_id == media_id)),
+        )
 
     async def upsert(self, detail: MediaDetail) -> MediaItem:
         existing = await self.get_by_source(detail.provider, detail.media_type, detail.external_id)

@@ -100,6 +100,15 @@ class MediaService:
             ),
         )
 
+    async def detail_by_id(self, media_id: UUID) -> MediaDetail:
+        item = await self.repository.get(media_id)
+        source = await self.repository.source_for_media(media_id)
+        if item is None or source is None:
+            raise NotFoundError("MEDIA_NOT_FOUND", "The media item does not exist.")
+        payload = dict(source.normalized_payload)
+        payload["media_id"] = item.id
+        return MediaDetail.model_validate(payload)
+
     async def discover(self, media_type: MediaType, page: int) -> list[MediaSummary]:
         provider = self.registry.primary_for(media_type)
         try:

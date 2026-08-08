@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.arena import ArenaComparison, ArenaRating
 from app.db.models.catalog import MediaItem
-from app.db.models.enums import ArenaOutcome, LibraryStatus, MediaType
-from app.db.models.tracking import LibraryEntry
+from app.db.models.enums import ArenaOutcome, MediaType
+from app.db.models.tracking import ConsumptionRecord, LibraryEntry
 
 
 class ArenaRepository:
@@ -21,11 +21,13 @@ class ArenaRepository:
             await self.session.scalars(
                 select(MediaItem.id)
                 .join(LibraryEntry, LibraryEntry.media_id == MediaItem.id)
+                .join(ConsumptionRecord, ConsumptionRecord.library_entry_id == LibraryEntry.id)
                 .where(
                     LibraryEntry.user_id == self.user_id,
-                    LibraryEntry.status == LibraryStatus.COMPLETED,
                     MediaItem.media_type == media_type,
+                    ConsumptionRecord.user_id == self.user_id,
                 )
+                .distinct()
             )
         )
         existing = list(
