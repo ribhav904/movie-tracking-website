@@ -33,11 +33,9 @@ class TrackingService:
         if media is None:
             raise NotFoundError("MEDIA_NOT_FOUND", "The media item does not exist.")
         if media.media_type == MediaType.TV:
-            if payload.season_id is None:
-                raise AppError(
-                    "TV_SEASON_REQUIRED", "Choose a season when recording a television show."
-                )
-            if not await self.repository.season_belongs_to_media(payload.season_id, entry.media_id):
+            if payload.season_id is not None and not await self.repository.season_belongs_to_media(
+                payload.season_id, entry.media_id
+            ):
                 raise NotFoundError(
                     "TV_SEASON_NOT_FOUND", "The season does not belong to this show."
                 )
@@ -106,6 +104,20 @@ class TrackingService:
                 (record.rating for record in records if record.rating is not None), None
             )
             entry.manual_rating = latest_rating
+            return
+
+        whole_show_records = [record for record in records if record.season_id is None]
+        if whole_show_records:
+            entry.manual_rating = next(
+                (record.rating for record in whole_show_records if record.rating is not None),
+                entry.manual_rating,
+            )
+            details = await self.catalog_repository.tv_details(entry.media_id)
+            entry.status = (
+                LibraryStatus.COMPLETED
+                if details and details.status and details.status.casefold() == "ended"
+                else LibraryStatus.CAUGHT_UP
+            )
             return
 
         watched_seasons = {record.season_id for record in records if record.season_id is not None}

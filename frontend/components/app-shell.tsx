@@ -7,12 +7,10 @@ import {
   Clapperboard,
   Heart,
   LibraryBig,
-  Menu,
   Moon,
   Search,
   Sun,
   Swords,
-  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -37,7 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { state, email } = useAuth();
   const { resolvedTheme, toggleTheme } = useTheme();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState("");
 
   useEffect(() => {
     if (state === "signed_out") router.replace("/sign-in");
@@ -49,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-frame">
-      <aside className={`sidebar ${menuOpen ? "sidebar--open" : ""}`}>
+      <aside className="sidebar">
         <div className="sidebar__brand">
           <Link href="/" className="brand" aria-label="Ledger home">
             <span className="brand__mark" aria-hidden="true">L</span>
@@ -58,9 +56,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <small>Entertainment archive</small>
             </span>
           </Link>
-          <button className="icon-button sidebar__close" onClick={() => setMenuOpen(false)} aria-label="Close navigation">
-            <X size={18} />
-          </button>
         </div>
 
         <nav className="sidebar__nav" aria-label="Primary navigation">
@@ -72,7 +67,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={`nav-item ${active ? "nav-item--active" : ""}`}
-                onClick={() => setMenuOpen(false)}
               >
                 <Icon size={17} strokeWidth={1.8} />
                 <span>{item.label}</span>
@@ -83,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="sidebar__footer">
           {!isBackendConfigured && <span className="preview-label">Preview data</span>}
-          <Link href="/settings" className="account-link" onClick={() => setMenuOpen(false)}>
+          <Link href="/settings" className="account-link">
             <span className="account-link__avatar" aria-hidden="true">{email.slice(0, 1).toUpperCase()}</span>
             <span className="account-link__text">
               <strong>{state === "preview" ? "Preview collection" : email}</strong>
@@ -96,12 +90,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="app-main">
         <header className="topbar">
-          {!menuOpen && <button className="icon-button topbar__menu" onClick={() => setMenuOpen(true)} aria-label="Open navigation"><Menu size={20} /></button>}
-          <button className="command-search" onClick={() => router.push("/discover")}>
+          <form className="command-search" onSubmit={(event) => {
+            event.preventDefault();
+            const query = globalSearch.trim();
+            if (query) router.push(`/discover?scope=all&query=${encodeURIComponent(query)}`);
+          }}>
             <Search size={17} />
-            <span>Search your next watch, read, or play</span>
-            <kbd>/</kbd>
-          </button>
+            <input value={globalSearch} onChange={(event) => setGlobalSearch(event.target.value)} placeholder="Search your next watch, read, or play" aria-label="Search films, television, games, and books" />
+            <kbd>Enter</kbd>
+          </form>
           <div className="topbar__actions">
             <button className="icon-button" onClick={toggleTheme} aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}>
               {resolvedTheme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
@@ -123,7 +120,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           );
         })}
       </nav>
-      {menuOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => setMenuOpen(false)} />}
     </div>
   );
 }

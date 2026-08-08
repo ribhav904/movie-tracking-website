@@ -1,3 +1,4 @@
+import asyncio
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -6,7 +7,7 @@ from sqlalchemy import select
 
 from app.core.exceptions import AppError, NotFoundError
 from app.db.models.catalog import MediaSource
-from app.db.models.enums import MediaProvider, MediaType
+from app.db.models.enums import DiscoverMode, MediaProvider, MediaType
 from app.integrations import ProviderRegistry
 from app.repositories.catalog import CatalogRepository
 from app.schemas.media import MediaDetail, MediaSummary
@@ -39,6 +40,26 @@ class MediaService:
                 "The media provider is temporarily unavailable.",
                 status_code=503,
             ) from exc
+
+    async def search_all(self, query: str, page: int) -> list[MediaSummary]:
+        results = await asyncio.gather(
+            *(self.search(query, media_type, page) for media_type in MediaType),
+            return_exceptions=True,
+        )
+        items: list[MediaSummary] = []
+        for result in results:
+            if not isinstance(result, list):
+                continue
+            # A balanced list makes a universal search useful without one
+            # provider crowding out the other media types.
+            items.extend(result[:10])
+        if not items:
+            raise AppError(
+                "PROVIDER_UNAVAILABLE",
+                "Media providers are temporarily unavailable.",
+                status_code=503,
+            )
+        return items
 
     async def detail(
         self, provider: MediaProvider, media_type: MediaType, external_id: str
@@ -109,10 +130,12 @@ class MediaService:
         payload["media_id"] = item.id
         return MediaDetail.model_validate(payload)
 
-    async def discover(self, media_type: MediaType, page: int) -> list[MediaSummary]:
+    async def discover(
+        self, media_type: MediaType, page: int, mode: DiscoverMode
+    ) -> list[MediaSummary]:
         provider = self.registry.primary_for(media_type)
         try:
-            return await provider.discover(media_type, page=page)
+            return await provider.discover(media_type, page=page, mode=mode)
         except httpx.HTTPError as exc:
             if media_type == MediaType.BOOK:
                 try:

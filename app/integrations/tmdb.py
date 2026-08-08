@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 
-from app.db.models.enums import MediaProvider, MediaType
+from app.db.models.enums import DiscoverMode, MediaProvider, MediaType
 from app.integrations.base import MediaProviderClient
 from app.schemas.media import MediaDetail, MediaSummary, PublicRating
 
@@ -121,9 +121,21 @@ class TMDBClient(MediaProviderClient):
             extra=extra,
         )
 
-    async def discover(self, media_type: MediaType, *, page: int = 1) -> list[MediaSummary]:
+    async def discover(
+        self, media_type: MediaType, *, page: int = 1, mode: DiscoverMode = DiscoverMode.TRENDING
+    ) -> list[MediaSummary]:
         kind = self._validate_type(media_type)
+        if mode == DiscoverMode.TRENDING:
+            endpoint = f"/trending/{kind}/week"
+        elif mode == DiscoverMode.POPULAR:
+            endpoint = f"/{kind}/popular"
+        elif mode == DiscoverMode.TOP_RATED:
+            endpoint = f"/{kind}/top_rated"
+        elif media_type == MediaType.MOVIE:
+            endpoint = "/movie/now_playing"
+        else:
+            endpoint = "/tv/on_the_air"
         response = await self.request(
-            "GET", f"{API}/trending/{kind}/week", headers=self.headers, params={"page": page}
+            "GET", f"{API}{endpoint}", headers=self.headers, params={"page": page}
         )
         return [self._summary(item, media_type) for item in response.json().get("results", [])[:20]]

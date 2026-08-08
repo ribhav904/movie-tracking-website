@@ -4,7 +4,7 @@ from typing import Any, cast
 
 import httpx
 
-from app.db.models.enums import MediaProvider, MediaType
+from app.db.models.enums import DiscoverMode, MediaProvider, MediaType
 from app.integrations.base import MediaProviderClient
 from app.schemas.media import MediaDetail, MediaSummary, PublicRating
 
@@ -111,7 +111,9 @@ class IGDBClient(MediaProviderClient):
             },
         )
 
-    async def discover(self, media_type: MediaType, *, page: int = 1) -> list[MediaSummary]:
+    async def discover(
+        self, media_type: MediaType, *, page: int = 1, mode: DiscoverMode = DiscoverMode.TRENDING
+    ) -> list[MediaSummary]:
         if media_type != MediaType.GAME:
             raise ValueError("IGDB supports only games")
         offset = max(page - 1, 0) * 20
@@ -119,8 +121,16 @@ class IGDBClient(MediaProviderClient):
             "id,name,summary,first_release_date,total_rating,total_rating_count,"
             "cover.image_id,genres.name"
         )
+        if mode == DiscoverMode.TOP_RATED:
+            where, order = "total_rating != null", "total_rating desc"
+        elif mode == DiscoverMode.RECENT:
+            where = f"first_release_date != null & first_release_date <= {int(time.time())}"
+            order = "first_release_date desc"
+        else:
+            # IGDB does not expose a dedicated trending list through this endpoint;
+            # rating volume is the reliable, supported popularity proxy.
+            where, order = "total_rating_count != null", "total_rating_count desc"
         rows = await self._query(
-            f"fields {fields}; where total_rating_count != null; "
-            f"sort total_rating_count desc; limit 20; offset {offset};"
+            f"fields {fields}; where {where}; sort {order}; limit 20; offset {offset};"
         )
         return [self._summary(item) for item in rows]

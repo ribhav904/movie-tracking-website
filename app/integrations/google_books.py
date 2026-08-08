@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 
-from app.db.models.enums import MediaProvider, MediaType
+from app.db.models.enums import DiscoverMode, MediaProvider, MediaType
 from app.integrations.base import MediaProviderClient
 from app.schemas.media import MediaDetail, MediaSummary, PublicRating
 
@@ -99,5 +99,23 @@ class GoogleBooksClient(MediaProviderClient):
             },
         )
 
-    async def discover(self, media_type: MediaType, *, page: int = 1) -> list[MediaSummary]:
-        return await self.search("subject:fiction", media_type, page=page)
+    async def discover(
+        self, media_type: MediaType, *, page: int = 1, mode: DiscoverMode = DiscoverMode.TRENDING
+    ) -> list[MediaSummary]:
+        if media_type != MediaType.BOOK:
+            raise ValueError("Google Books supports only books")
+        response = await self.request(
+            "GET",
+            "https://www.googleapis.com/books/v1/volumes",
+            params={
+                "q": "subject:fiction",
+                "key": self.api_key,
+                "startIndex": (page - 1) * 20,
+                "maxResults": 20,
+                # Google Books supports relevance and newest only. Relevance is
+                # the closest available equivalent for popular/trending/top rated.
+                "orderBy": "newest" if mode == DiscoverMode.RECENT else "relevance",
+                "printType": "books",
+            },
+        )
+        return [self._summary(item) for item in response.json().get("items", [])]
